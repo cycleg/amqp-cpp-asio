@@ -1,4 +1,4 @@
-# Обертка библиотеки AMQP-CPP с вводом/выводом посредством Boost::asio
+# Обертка библиотеки AMQP-CPP
 
 Настоящая библиотека представляет собой обертку библиотеки
 [AMQP-CPP](https://github.com/CopernicaMarketingSoftware/AMQP-CPP) с
