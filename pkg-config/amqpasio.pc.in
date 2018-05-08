@@ -1,0 +1,9 @@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: amqpasio
+Description: An AMQP-CPP wrapper with Boost::asio
+Version: @AMQPASIO_VERSION@
+URL: https://github.com/cycleg/amqp-cpp-asio
+Libs: -L${libdir} @PKG_CONFIG_LIBS@
+Cflags: -I${includedir}
