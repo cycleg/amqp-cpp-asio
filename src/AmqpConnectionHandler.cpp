@@ -199,12 +199,27 @@ std::cout << "ConnectionHandler::StateMachine() read callback installed, bytes i
         boost::system::error_code ec;
         boost::asio::ip::tcp::endpoint endpoint = m_socket.remote_endpoint(ec);
         UNUSED(endpoint)
-        // if connection close by other side, the underlying descriptor
-        // already closed
-        if (!ec) m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+        try
+        {
+          // if connection close by other side, the underlying descriptor
+          // already closed
+          if (!ec)
+            m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+        }
+        catch (boost::system::system_error& e)
+        {
+          // socket already dead
+        }
         // waiting for asynchronous handlers complete
         while (m_readReq || m_writeReq) m_service.run_one();
-        if (!ec) m_socket.close();
+        try
+        {
+          if (!ec) m_socket.close();
+        }
+        catch (boost::system::system_error& e)
+        {
+          // ignore error
+        }
         // clear i/o buffers
         auto buf(std::make_shared<boost::asio::streambuf>());
         m_inBuf.swap(buf);
