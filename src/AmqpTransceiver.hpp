@@ -195,6 +195,9 @@ class Transceiver
     ///
     Transceiver(const Transceiver&) = delete;
 
+    inline std::string exchange_point() const { return m_exchange; }
+    inline std::string route_in() const { return m_route_in; }
+
     ///
     /// Готовность приемопередатчика к работе.
     ///
