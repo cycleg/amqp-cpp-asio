@@ -12,7 +12,6 @@ template <class TransceiverImpl>
 Connector<TransceiverImpl>::Connector(boost::asio::io_service& service,
                                       std::string brokerUrl):
   m_address(brokerUrl),
-  m_nextTransceiverId(0),
   m_service(service),
   m_exiting(false),
   m_connectionHandlerReady(false),
@@ -28,7 +27,7 @@ Connector<TransceiverImpl>::~Connector()
 }
 
 template <class TransceiverImpl>
-typename Connector<TransceiverImpl>::TransceiverId
+typename Connector<TransceiverImpl>::iterator
 Connector<TransceiverImpl>::transceiver(const std::string& exchange,
                                         const std::string& queue_,
                                         const std::string& route_in,
@@ -38,100 +37,38 @@ Connector<TransceiverImpl>::transceiver(const std::string& exchange,
     exchange, queue_, route_in, listener
   );
   // TODO: thread safety
-  TransceiverId id = m_nextTransceiverId++;
-  while (transceiverExists(id)) id = m_nextTransceiverId++;
-  m_transceivers.insert(
-    std::pair<TransceiverId, TransceiverPtr>(id, transceiver)
-  );
-  return id;
+  m_transceivers.push_front(transceiver);
+  return m_transceivers.begin();
 }
 
 template <class TransceiverImpl>
-bool Connector<TransceiverImpl>::transceiverReady(TransceiverId id) const
+void Connector<TransceiverImpl>::open(Connector<TransceiverImpl>::iterator i)
 {
   // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  return (i == m_transceivers.end()) ? false : i->second->ready();
-}
-
-template <class TransceiverImpl>
-bool Connector<TransceiverImpl>::transceiverRunning(TransceiverId id) const
-{
-  // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  return (i == m_transceivers.end()) ? false : i->second->is_running();
-}
-
-template <class TransceiverImpl>
-void Connector<TransceiverImpl>::onBounceMessage(
-  TransceiverId id,
-  typename TransceiverImpl::BounceCallback callback
-)
-{
-  // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
-  i->second->onBounce(callback);
-}
-
-template <class TransceiverImpl>
-void Connector<TransceiverImpl>::onMessage(
-  TransceiverId id,
-  typename TransceiverImpl::MessageCallback callback
-)
-{
-  // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
-  i->second->onMessage(callback);
-}
-
-template <class TransceiverImpl>
-void Connector<TransceiverImpl>::onTransceiverExit(
-  TransceiverId id,
-  typename TransceiverImpl::ExitCallback callback
-)
-{
-  // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
-  i->second->onExit(callback);
-}
-
-template <class TransceiverImpl>
-void Connector<TransceiverImpl>::open(TransceiverId id)
-{
-  // TODO: thread safety
-  if (!m_connectionHandlerReady) return;
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
-  if (!i->second->is_running())
+  TransceiverPtr t(*i);
+  if (!t->is_running())
   {
-    i->second->start(m_amqpConnection.get());
-    while (i->second->is_running() && !i->second->ready())
-      m_service.run_one();
+    t->start(m_amqpConnection.get());
+    while (t->is_running() && !t->ready()) m_service.run_one();
   }
 }
 
 template <class TransceiverImpl>
-void Connector<TransceiverImpl>::close(TransceiverId id)
+void Connector<TransceiverImpl>::close(Connector<TransceiverImpl>::iterator i)
 {
   // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
-  if (i->second->is_running())
+  TransceiverPtr t(*i);
+  if (t->is_running())
   {
-    i->second->stop();
-    while (i->second->is_running()) m_service.run_one();
+    t->stop();
+    while (t->is_running()) m_service.run_one();
   }
 }
 
 template <class TransceiverImpl>
-void Connector<TransceiverImpl>::remove(TransceiverId id)
+void Connector<TransceiverImpl>::remove(Connector<TransceiverImpl>::iterator i)
 {
   // TODO: thread safety
-  auto i = m_transceivers.find(id);
-  if (i == m_transceivers.end()) return;
   m_transceivers.erase(i);
 }
 
@@ -167,32 +104,32 @@ std::cout << std::endl;
       {
         // regular stop
         m_connectionHandlerReady = false;
-        if (m_exitCb) m_exitCb(eNormal);
         m_amqpConnection.reset();
         m_sentinel.reset();
+        if (m_exitCb) m_exitCb(eNormal);
         return;
       }
       if (!m_connectionHandlerReady)
       {
         // can't open connection to broker
-        if (m_exitCb) m_exitCb(eBrokerConnectError);
         m_amqpConnection.reset();
         m_sentinel.reset();
+        if (m_exitCb) m_exitCb(eBrokerConnectError);
         return;
       }
       if (m_connectionHandler->amqp_error())
         {
           for (auto& i: m_transceivers)
           {
-            i.second->drop();
+            i->drop();
 #ifndef NDEBUG
-std::cout << i.first << ": " << i.second->error() << std::endl;
+std::cout << i->route_in() << "@" << i->exchange_point() << ": " << i->error() << std::endl;
 #endif
           }
           m_connectionHandlerReady = false;
-          if (m_exitCb) m_exitCb(eAmqpError);
           m_amqpConnection.reset();
           m_sentinel.reset();
+          if (m_exitCb) m_exitCb(eAmqpError);
         }
         else stop();
     }
@@ -208,13 +145,13 @@ std::cout << "connection handler m_connectionHandlerReady = " << m_connectionHan
       m_connectionHandler.get(), m_address.login(), m_address.vhost()
     ));
     m_amqpConnection.swap(connection);
-    m_startedCb();
-#ifndef NDEBUG
-std::cout << "Connector::async_start() after callback" << std::endl;
-#endif
     m_sentinel.reset();
 #ifndef NDEBUG
 std::cout << "Connector::async_start() after m_sentinel.reset()" << std::endl;
+#endif
+    if (m_startedCb) m_startedCb();
+#ifndef NDEBUG
+std::cout << "Connector::async_start() after callback" << std::endl;
 #endif
   });
 }
@@ -224,7 +161,7 @@ void Connector<TransceiverImpl>::start()
 {
   // TODO: thread safety
   if (m_connectionHandlerReady) return;
-  async_start([]() {});
+  async_start();
   do
   {
     m_service.run_one();
@@ -243,16 +180,16 @@ std::cout << "Connector::run()" << std::endl;
     m_sentinel.swap(work);
   }
   for (auto& i: m_transceivers)
-    if (!i.second->is_running())
+    if (!i->is_running())
     {
 #ifndef NDEBUG
-std::cout << "Connector::run() " << i.first << std::endl;
+std::cout << "Connector::run() " << i->route_in() << "@" << i->exchange_point() << std::endl;
 #endif
-      i.second->start(m_amqpConnection.get());
+      i->start(m_amqpConnection.get());
     }
   for (auto& i: m_transceivers)
   {
-    while (i.second->is_running() && !i.second->ready()) m_service.run_one();
+    while (i->is_running() && !i->ready()) m_service.run_one();
   }
 #ifndef NDEBUG
 std::cout << "Connector::run() m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
@@ -269,12 +206,12 @@ std::cout << "Connector::stop() " << m_connectionHandlerReady << std::endl;
   if (!m_connectionHandlerReady) return;
   for (auto& i: m_transceivers)
   {
-    i.second->stop();
+    i->stop();
   }
   m_service.post([this]() {
     for (auto& i: m_transceivers)
     {
-      while (i.second->is_running()) m_service.run_one();
+      while (i->is_running()) m_service.run_one();
     }
     if (m_connectionHandler->stopped())
       {
@@ -282,9 +219,9 @@ std::cout << "Connector::stop() " << m_connectionHandlerReady << std::endl;
         {
           // handler's shutdown callback will not called
           m_connectionHandlerReady = false;
-          if (m_exitCb) m_exitCb(eNormal);
           m_amqpConnection.reset();
           m_sentinel.reset();
+          if (m_exitCb) m_exitCb(eNormal);
         }
       }
       else

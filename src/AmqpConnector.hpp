@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <memory>
-#include <map>
+#include <list>
 #include <string>
 #include <boost/asio/io_service.hpp>
 #include <amqpcpp.h>
@@ -27,7 +27,16 @@ class Connector
       eAmqpError ///< Библиотека AMQP-CPP сообщила об ошибке.
     };
 
-    typedef unsigned int TransceiverId;
+    ///
+    /// Указатель на экземпляр приемопередатчика.
+    ///
+    typedef std::shared_ptr< TransceiverImpl > TransceiverPtr;
+    ///
+    /// Тип списка приемопередатчиков.
+    ///
+    typedef std::list<TransceiverPtr> TransceiverList;
+    typedef typename TransceiverList::iterator iterator;
+
     typedef std::function<void()> StartedCallback;
     typedef std::function<void(ExitCode)> ExitCallback;
 
@@ -39,38 +48,31 @@ class Connector
     inline bool ready() const { return m_connectionHandlerReady; }
 
     inline void onExit(ExitCallback callback) { m_exitCb = callback; }
+    inline ExitCallback getOnExit() const { return m_exitCb; }
+    inline boost::asio::io_service& io_service() { return m_service; }
+    inline std::string url() const { return std::string(m_address); }
 
-    inline bool transceiverExists(TransceiverId id) const
-    {
-      // TODO: thread safety
-      return m_transceivers.find(id) != m_transceivers.end();
-    }
+    inline iterator begin() { return m_transceivers.begin(); }
+    inline iterator end() { return m_transceivers.end(); }
 
-    TransceiverId transceiver(const std::string& exchange,
-                              const std::string& queue_,
-                              const std::string& route_in,
-                              bool listener);
-    bool transceiverReady(TransceiverId id) const;
-    bool transceiverRunning(TransceiverId id) const;
-    void onBounceMessage(TransceiverId id, typename TransceiverImpl::BounceCallback callback);
-    void onMessage(TransceiverId id, typename TransceiverImpl::MessageCallback callback);
-    void onTransceiverExit(TransceiverId id, typename TransceiverImpl::ExitCallback callback);
-    void open(TransceiverId id);
-    void close(TransceiverId id);
-    void remove(TransceiverId id);
+    iterator transceiver(const std::string& exchange,
+                         const std::string& queue_,
+                         const std::string& route_in,
+                         bool listener);
+    void open(iterator i);
+    void close(iterator i);
+    void remove(iterator i);
 
     template<class Message>
-    bool send(TransceiverId id, const Message& message,
+    bool send(iterator i, const Message& message,
               const std::string& route, bool mandatory = true)
     {
       // TODO: thread safety
       if (!m_connectionHandlerReady) return false;
-      auto i = m_transceivers.find(id);
-      if (i == m_transceivers.end()) return false;
-      return i->second->send(message, route, mandatory);
+      return (*i)->send(message, route, mandatory);
     }
 
-    void async_start(StartedCallback callback);
+    void async_start(StartedCallback callback = nullptr);
     ///
     /// Инициировать работу с брокером.
     ///
@@ -104,17 +106,8 @@ class Connector
     void stop();
 
   private:
-    ///
-    /// Указатель на экземпляр приемопередатчика.
-    ///
-    typedef std::shared_ptr< TransceiverImpl > TransceiverPtr;
-
     AMQP::Address m_address; ///< Адрес брокера AMQP.
-    TransceiverId m_nextTransceiverId; ///< Следующий свободный идентификатор
-                                       ///< приемопередатчика.
-    std::map<TransceiverId, TransceiverPtr>
-      m_transceivers; ///< Карта-контейнер приемопередатчиков; ключ --
-                      ///< идентификатор, значение -- премопередачик.
+    TransceiverList m_transceivers; ///< Контейнер приемопередатчиков.
     boost::asio::io_service& m_service; ///< Ссылка на экземпляр цикла
                                         ///< ввода/вывода boost::asio,
                                         ///< используемого экземпляром

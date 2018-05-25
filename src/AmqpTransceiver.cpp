@@ -46,56 +46,6 @@ void Transceiver::onExit(ExitCallback callback)
   m_onExit = callback;
 }
 
-void Transceiver::start(AMQP::Connection* connection)
-{
-  if (m_state == eEnd)
-  {
-    m_connection = connection;
-    m_error.clear();
-    m_ec = eNoError;
-    m_state = eCreateChannel;
-#ifndef NDEBUG
-std::cout << "Transceiver eEnd -> " << m_state << std::endl;
-#endif
-    StateMachine();
-  }
-}
-
-void Transceiver::stop()
-{
-  if (m_state == eEnd) return;
-  std::map<State, State> route = {
-    std::pair<State, State>(eCreateChannel, eEnd),
-    std::pair<State, State>(eCreateExchange, eCloseChannel),
-    std::pair<State, State>(eCheckQueue, eCloseChannel),
-    std::pair<State, State>(eCreateQueue, eCloseChannel),
-    std::pair<State, State>(eBindQueue, eRemoveQueue),
-    std::pair<State, State>(eCreateConsumer, eUnbindQueue),
-    std::pair<State, State>(eReady, eShutdown)
-  };
-  if ((m_state >= eCreateChannel) && (m_state <= eReady))
-  {
-#ifndef NDEBUG
-std::cout << "Transceiver " << m_state << " -> ";
-#endif
-    m_state = route[m_state];
-#ifndef NDEBUG
-std::cout << m_state << std::endl;
-#endif
-    StateMachine();
-  }
-  // else nothing to do, transceiver already stops
-}
-
-void Transceiver::drop()
-{
-  if (m_state == eEnd) return;
-  m_error = "transceiver dropped";
-  m_ec = eDrop;
-  m_state = eEnd;
-  StateMachine();
-}
-
 bool Transceiver::send(const Json::Value& message, const std::string& route,
                        bool mandatory)
 {
@@ -152,6 +102,65 @@ std::cout << "DefferedPublisher:: onReturned() do callback" << std::endl;
       }
     });
   return true;
+}
+
+void Transceiver::OnMessage(AMQP::Channel* channel, const AMQP::Message& message,
+                            uint64_t deliveryTag, bool redelivered)
+{
+  UNUSED(channel)
+  UNUSED(message)
+  UNUSED(deliveryTag)
+  UNUSED(redelivered)
+}
+
+void Transceiver::start(AMQP::Connection* connection)
+{
+  if (m_state == eEnd)
+  {
+    m_connection = connection;
+    m_error.clear();
+    m_ec = eNoError;
+    m_state = eCreateChannel;
+#ifndef NDEBUG
+std::cout << "Transceiver eEnd -> " << m_state << std::endl;
+#endif
+    StateMachine();
+  }
+}
+
+void Transceiver::stop()
+{
+  if (m_state == eEnd) return;
+  std::map<State, State> route = {
+    std::pair<State, State>(eCreateChannel, eEnd),
+    std::pair<State, State>(eCreateExchange, eCloseChannel),
+    std::pair<State, State>(eCheckQueue, eCloseChannel),
+    std::pair<State, State>(eCreateQueue, eCloseChannel),
+    std::pair<State, State>(eBindQueue, eRemoveQueue),
+    std::pair<State, State>(eCreateConsumer, eUnbindQueue),
+    std::pair<State, State>(eReady, eShutdown)
+  };
+  if ((m_state >= eCreateChannel) && (m_state <= eReady))
+  {
+#ifndef NDEBUG
+std::cout << "Transceiver " << m_state << " -> ";
+#endif
+    m_state = route[m_state];
+#ifndef NDEBUG
+std::cout << m_state << std::endl;
+#endif
+    StateMachine();
+  }
+  // else nothing to do, transceiver already stops
+}
+
+void Transceiver::drop()
+{
+  if (m_state == eEnd) return;
+  m_error = "transceiver dropped";
+  m_ec = eDrop;
+  m_state = eEnd;
+  StateMachine();
 }
 
 void Transceiver::StateMachine()
@@ -587,13 +596,4 @@ std::cout << "Transceiver eEnd" << std::endl;
     default:
       break;
   }
-}
-
-void Transceiver::OnMessage(AMQP::Channel* channel, const AMQP::Message& message,
-                            uint64_t deliveryTag, bool redelivered)
-{
-  UNUSED(channel)
-  UNUSED(message)
-  UNUSED(deliveryTag)
-  UNUSED(redelivered)
 }
