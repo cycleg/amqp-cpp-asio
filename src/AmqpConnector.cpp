@@ -1,5 +1,6 @@
 #include <iostream> // debug output
 #include <boost/asio/deadline_timer.hpp>
+#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include "AmqpConnectionHandler.hpp"
 #include "AmqpConnector.hpp"
@@ -84,76 +85,15 @@ void Connector<TransceiverImpl>::async_start(StartedCallback callback)
     m_sentinel.swap(work);
   }
   auto connectionHandler = std::make_shared<ConnectionHandler>(
-    m_service, m_address.hostname(),
+    m_service,
+    m_address.hostname(),
     boost::lexical_cast<std::string>(m_address.port()),
-    [this](const std::string& message) {
-      // on shutdown callback
-#ifndef NDEBUG
-std::cout << "connection handler shutdown";
-#endif
-      if (!message.empty())
-      {
-#ifndef NDEBUG
-std::cout << ": " << message;
-#endif
-      }
-#ifndef NDEBUG
-std::cout << std::endl;
-#endif
-      if (m_exiting)
-      {
-        // regular stop
-        m_connectionHandlerReady = false;
-        m_amqpConnection.reset();
-        m_sentinel.reset();
-        if (m_exitCb) m_exitCb(eNormal);
-        return;
-      }
-      if (!m_connectionHandlerReady)
-      {
-        // can't open connection to broker
-        m_amqpConnection.reset();
-        m_sentinel.reset();
-        if (m_exitCb) m_exitCb(eBrokerConnectError);
-        return;
-      }
-      if (m_connectionHandler->amqp_error())
-        {
-          for (auto& i: m_transceivers)
-          {
-            i->drop();
-#ifndef NDEBUG
-std::cout << i->route_in() << "@" << i->exchange_point() << ": " << i->error() << std::endl;
-#endif
-          }
-          m_connectionHandlerReady = false;
-          m_amqpConnection.reset();
-          m_sentinel.reset();
-          if (m_exitCb) m_exitCb(eAmqpError);
-        }
-        else stop();
-    }
+    boost::bind(&Connector<TransceiverImpl>::onShutdown, this, _1)
   );
   m_connectionHandler.swap(connectionHandler);
-  m_connectionHandler->start([this]() {
-    // on connected callback
-    m_connectionHandlerReady = true;
-#ifndef NDEBUG
-std::cout << "connection handler m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
-#endif
-    auto connection(std::make_shared<AMQP::Connection>(
-      m_connectionHandler.get(), m_address.login(), m_address.vhost()
-    ));
-    m_amqpConnection.swap(connection);
-    m_sentinel.reset();
-#ifndef NDEBUG
-std::cout << "Connector::async_start() after m_sentinel.reset()" << std::endl;
-#endif
-    if (m_startedCb) m_startedCb();
-#ifndef NDEBUG
-std::cout << "Connector::async_start() after callback" << std::endl;
-#endif
-  });
+  m_connectionHandler->start(
+    boost::bind(&Connector<TransceiverImpl>::onConnected, this)
+  );
 }
 
 template <class TransceiverImpl>
@@ -237,4 +177,74 @@ std::cout << "Connector::stop() after handler stop" << std::endl;
 #endif
       }
   });
+}
+
+template <class TransceiverImpl>
+void Connector<TransceiverImpl>::onConnected()
+{
+  m_connectionHandlerReady = true;
+#ifndef NDEBUG
+std::cout << "connection handler m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
+#endif
+  auto connection(std::make_shared<AMQP::Connection>(
+    m_connectionHandler.get(), m_address.login(), m_address.vhost()
+  ));
+  m_amqpConnection.swap(connection);
+  m_sentinel.reset();
+#ifndef NDEBUG
+std::cout << "Connector::async_start() after m_sentinel.reset()" << std::endl;
+#endif
+  if (m_startedCb) m_startedCb();
+#ifndef NDEBUG
+std::cout << "Connector::async_start() after callback" << std::endl;
+#endif
+}
+
+template <class TransceiverImpl>
+void Connector<TransceiverImpl>::onShutdown(const std::string& message)
+{
+#ifndef NDEBUG
+std::cout << "connection handler shutdown";
+#endif
+  if (!message.empty())
+  {
+#ifndef NDEBUG
+std::cout << ": " << message;
+#endif
+  }
+#ifndef NDEBUG
+std::cout << std::endl;
+#endif
+  if (m_exiting)
+  {
+    // regular stop
+    m_connectionHandlerReady = false;
+    m_amqpConnection.reset();
+    m_sentinel.reset();
+    if (m_exitCb) m_exitCb(eNormal);
+    return;
+  }
+  if (!m_connectionHandlerReady)
+  {
+    // can't open connection to broker
+    m_amqpConnection.reset();
+    m_sentinel.reset();
+    if (m_exitCb) m_exitCb(eBrokerConnectError);
+    return;
+  }
+  if (m_connectionHandler->amqp_error())
+    {
+      for (auto& i: m_transceivers)
+      {
+        i->drop();
+#ifndef NDEBUG
+std::cout << i->route_in() << "@" << i->exchange_point() << ": " << i->error() << std::endl;
+#endif
+      }
+      m_connectionHandlerReady = false;
+      m_amqpConnection.reset();
+      m_sentinel.reset();
+      if (m_exitCb) m_exitCb(eAmqpError);
+    }
+    else stop();
 }
