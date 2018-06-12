@@ -215,6 +215,12 @@ class Transceiver
     /// пустым.
     ///
     inline std::string route_in() const { return m_route_in; }
+    ///
+    /// Данный экземпляр работает на прием.
+    ///
+    /// @return Работает или нет.
+    ///
+    inline bool is_listener() const { return m_listener; }
 
     ///
     /// Конечный автомат приемопередатчика работает.
