@@ -45,7 +45,7 @@ void ConnectionHandler::stop()
 {
   if (m_state == eNotConnected) return;
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::stop()" << std::endl;
+std::clog << "ConnectionHandler::stop()" << std::endl;
 #endif
   m_lastError.clear();
   m_state = eShutdown;
@@ -76,13 +76,13 @@ void ConnectionHandler::onData(AMQP::Connection* connection,
   std::ostream os(outBuf.get());
   os.write(buffer, size);
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onData() " << outBuf->size() << "!" << uint64_t(outBuf.get()) << std::endl;
+std::clog << "ConnectionHandler::onData() " << outBuf->size() << "!" << uint64_t(outBuf.get()) << std::endl;
 #endif
   m_outBufs.push(outBuf);
   if (m_outBufs.size() == 1)
   {
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onData() wait for write " << m_outBufs.size() << std::endl;
+std::clog << "ConnectionHandler::onData() wait for write " << m_outBufs.size() << std::endl;
 #endif
     m_writeReq = true;
     boost::asio::async_write(
@@ -103,7 +103,7 @@ void ConnectionHandler::onError(AMQP::Connection* connection,
   m_lastError.append(message);
   m_amqpError = true;
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onError() " << m_lastError << std::endl;
+std::clog << "ConnectionHandler::onError() " << m_lastError << std::endl;
 #endif
   m_state = eShutdown;
   StateMachine();
@@ -114,7 +114,7 @@ void ConnectionHandler::onClosed(AMQP::Connection* connection)
   if (!connected()) return;
   if (!m_connection) m_connection = connection;
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onClosed()" << std::endl;
+std::clog << "ConnectionHandler::onClosed()" << std::endl;
 #endif
   m_lastError.clear();
   m_state = eShutdown;
@@ -127,7 +127,7 @@ void ConnectionHandler::StateMachine()
   {
     case eResolving:
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() before async_resolve()" << std::endl;
+std::clog << "ConnectionHandler::StateMachine() before async_resolve()" << std::endl;
 #endif
       m_resolver.async_resolve(boost::asio::ip::tcp::resolver::query(m_host, m_port),
                                [this](const boost::system::error_code& ec,
@@ -146,12 +146,12 @@ std::cout << "ConnectionHandler::StateMachine() before async_resolve()" << std::
         StateMachine();
       });
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() after async_resolve()" << std::endl;
+std::clog << "ConnectionHandler::StateMachine() after async_resolve()" << std::endl;
 #endif
       break;
     case eConnecting:
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() before async_connect()" << std::endl;
+std::clog << "ConnectionHandler::StateMachine() before async_connect()" << std::endl;
 #endif
       boost::asio::async_connect(m_socket, m_rIterator,
                                  [this](const boost::system::error_code& ec,
@@ -170,7 +170,7 @@ std::cout << "ConnectionHandler::StateMachine() before async_connect()" << std::
         StateMachine();
       });
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() after async_connect() " << m_socket.is_open() << std::endl;
+std::clog << "ConnectionHandler::StateMachine() after async_connect() " << m_socket.is_open() << std::endl;
 #endif
       break;
     case eReceiverInit:
@@ -180,7 +180,7 @@ std::cout << "ConnectionHandler::StateMachine() after async_connect() " << m_soc
       {
         // initialize i/o buffers and set read callback
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() read buffer size = " << m_connection->maxFrame() << std::endl;
+std::clog << "ConnectionHandler::StateMachine() read buffer size = " << m_connection->maxFrame() << std::endl;
 #endif
         m_readReq = true;
         m_socket.async_read_some(
@@ -190,7 +190,7 @@ std::cout << "ConnectionHandler::StateMachine() read buffer size = " << m_connec
                       boost::asio::placeholders::bytes_transferred)
         );
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::StateMachine() read callback installed, bytes in input " << m_inBuf->size() << std::endl;
+std::clog << "ConnectionHandler::StateMachine() read callback installed, bytes in input " << m_inBuf->size() << std::endl;
 #endif
       }
       break;
@@ -255,7 +255,7 @@ void ConnectionHandler::onRead(const boost::system::error_code& ec,
     return;
   }
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onRead() received " << bytes << std::endl;
+std::clog << "ConnectionHandler::onRead() received " << bytes << std::endl;
 #endif
   m_inBuf->commit(bytes);
   // Advanced Message Queuing Protocol Specification v0-9-1:
@@ -271,17 +271,17 @@ std::cout << "ConnectionHandler::onRead() received " << bytes << std::endl;
       buf.assign(boost::asio::buffers_begin(m_inBuf->data()),
                  boost::asio::buffers_begin(m_inBuf->data()) + m_inBuf->size());
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onRead() in buf " << buf.size() << std::endl;
+std::clog << "ConnectionHandler::onRead() in buf " << buf.size() << std::endl;
 #endif
       parsed = m_connection->parse(buf.data(), buf.size());
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onRead() parsed " << parsed << std::endl;
+std::clog << "ConnectionHandler::onRead() parsed " << parsed << std::endl;
 #endif
       // If broker unexpectedly close connection, this object already cleared.
       if (!connected()) return;
       m_inBuf->consume(parsed);
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onRead() remain " << m_inBuf->size() << std::endl;
+std::clog << "ConnectionHandler::onRead() remain " << m_inBuf->size() << std::endl;
 #endif
     } while ((m_inBuf->size() >= m_connection->expected()) && parsed);
   }
@@ -301,8 +301,8 @@ void ConnectionHandler::onWrite(const boost::system::error_code& ec,
   m_writeReq = false;
   if (!connected()) return;
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onWrite() send " << bytes << std::endl;
-std::cout << "ConnectionHandler::onWrite() remain " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
+std::clog << "ConnectionHandler::onWrite() send " << bytes << std::endl;
+std::clog << "ConnectionHandler::onWrite() remain " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
 #endif
   if (ec)
   {
@@ -318,15 +318,15 @@ std::cout << "ConnectionHandler::onWrite() remain " << m_outBufs.front()->size()
   if (!m_outBufs.front()->size())
   {
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onWrite() drop " << uint64_t(m_outBufs.front().get()) << std::endl;
+std::clog << "ConnectionHandler::onWrite() drop " << uint64_t(m_outBufs.front().get()) << std::endl;
 #endif
     m_outBufs.pop();
   }
   if (!m_outBufs.empty())
   {
 #ifndef NDEBUG
-std::cout << "ConnectionHandler::onWrite() wait for write " << m_outBufs.size() << std::endl;
-std::cout << "ConnectionHandler::onWrite() " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
+std::clog << "ConnectionHandler::onWrite() wait for write " << m_outBufs.size() << std::endl;
+std::clog << "ConnectionHandler::onWrite() " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
 #endif
     m_writeReq = true;
     boost::asio::async_write(

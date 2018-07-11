@@ -100,6 +100,7 @@ namespace amqp {
 /// eCreateConsumer --> eUnbindQueue : Fail
 ///
 /// eReady --> eShutdown : Transceiver::stop()
+/// eReady --> eEnd : Broker abruptly close channel
 ///
 /// eShutdown --> eUnbindQueue : If no consumer tag (stop() before tag received)
 /// eShutdown --> eUnbindQueue : Success (consumer cancelled)
@@ -147,6 +148,7 @@ class Transceiver
       eUnbindQueueError, ///< Ошибка отсоединения очереди.
       eRemoveQueueError, ///< Ошибка удаления очереди.
       eCloseChannelError, ///< Ошибка закрытия канала.
+      eChannelAbruptlyClosedError, ///< Канал неожиданно закрыт брокером.
       eDrop ///< Принудительный сброс приемопередатчика.
     };
 
@@ -245,6 +247,12 @@ class Transceiver
     /// Приемопередатчик может быть запущен, но не готов к работе.
     ///
     inline bool ready() const { return m_state == eReady; }
+    ///
+    /// Извлечь код ошибки завершения.
+    ///
+    /// @return Код ошибки.
+    ///
+    inline ExitCode errorCode() const { return m_ec; }
     ///
     /// Извлечь текст с описанием ошибки завершения.
     ///

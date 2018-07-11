@@ -56,18 +56,18 @@ bool Transceiver::send(const Json::Value& message, const std::string& route,
   std::string buffer;
   std::shared_ptr< AMQP::Envelope > envelope(ConvertFromJson(message, buffer));
 #ifndef NDEBUG
-std::cout << "Transceiver send " << buffer << std::endl;
+std::clog << "Transceiver send " << buffer << std::endl;
 #endif
   m_channel->publish(m_exchange, route, *envelope, flags)
     .onReturned([this](const AMQP::Message& message, int16_t code,
                        const std::string& description) {
 #ifndef NDEBUG
-std::cout << "DefferedPublisher:: onReturned()" << std::endl;
+std::clog << "DefferedPublisher:: onReturned()" << std::endl;
 #endif
       if (this->m_onBounceMessage)
       {
 #ifndef NDEBUG
-std::cout << "DefferedPublisher:: onReturned() do callback" << std::endl;
+std::clog << "DefferedPublisher:: onReturned() do callback" << std::endl;
 #endif
         this->m_onBounceMessage(message, code, description);
       }
@@ -85,18 +85,18 @@ bool Transceiver::send(const std::string& message, const std::string& route,
   envelope.setContentType("text/plain");
   envelope.setContentEncoding("utf-8");
 #ifndef NDEBUG
-std::cout << "Transceiver send " << message << std::endl;
+std::clog << "Transceiver send " << message << std::endl;
 #endif
   m_channel->publish(m_exchange, route, envelope, flags)
     .onReturned([this](const AMQP::Message& message, int16_t code,
                        const std::string& description) {
 #ifndef NDEBUG
-std::cout << "DefferedPublisher:: onReturned()" << std::endl;
+std::clog << "DefferedPublisher:: onReturned()" << std::endl;
 #endif
       if (this->m_onBounceMessage)
       {
 #ifndef NDEBUG
-std::cout << "DefferedPublisher:: onReturned() do callback" << std::endl;
+std::clog << "DefferedPublisher:: onReturned() do callback" << std::endl;
 #endif
         this->m_onBounceMessage(message, code, description);
       }
@@ -122,7 +122,7 @@ void Transceiver::start(AMQP::Connection* connection)
     m_ec = eNoError;
     m_state = eCreateChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eEnd -> " << m_state << std::endl;
+std::clog << "Transceiver eEnd -> " << m_state << std::endl;
 #endif
     StateMachine();
   }
@@ -143,11 +143,11 @@ void Transceiver::stop()
   if ((m_state >= eCreateChannel) && (m_state <= eReady))
   {
 #ifndef NDEBUG
-std::cout << "Transceiver " << m_state << " -> ";
+std::clog << "Transceiver " << m_state << " -> ";
 #endif
     m_state = route[m_state];
 #ifndef NDEBUG
-std::cout << m_state << std::endl;
+std::clog << m_state << std::endl;
 #endif
     StateMachine();
   }
@@ -179,20 +179,20 @@ void Transceiver::StateMachine()
             m_channel->onError(nullptr);
             m_state = m_listener ? eCheckQueue : eCreateExchange;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateChannel -> " << m_state << std::endl;
 #endif
             StateMachine();
           });
           m_channel->onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel error: " << message << std::endl;
+std::clog << "Transceiver eCreateChannel error: " << message << std::endl;
 #endif
             if (m_state != eCreateChannel) return;
             m_error = message;
             m_ec = eCreateChannelError;
             m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateChannel -> " << m_state << std::endl;
 #endif
             StateMachine();
           });
@@ -201,12 +201,12 @@ std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
         {
           m_error = "no AMQP connection";
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel error: " << m_error << std::endl;
+std::clog << "Transceiver eCreateChannel error: " << m_error << std::endl;
 #endif
           m_ec = eCreateChannelError;
           m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateChannel -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -216,7 +216,7 @@ std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
         {
           m_state = eCreateExchange;
 #ifndef NDEBUG
-std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eCheckQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -232,7 +232,7 @@ std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
               m_recvQueue = name;
               m_state = eCreateExchange;
 #ifndef NDEBUG
-std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eCheckQueue -> " << m_state << std::endl;
 #endif
               StateMachine();
             })
@@ -241,7 +241,7 @@ std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
               if (m_state != eCheckQueue) return;
               m_state = eRecreateChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eCheckQueue -> " << m_state << std::endl;
 #endif
               StateMachine();
             });
@@ -259,20 +259,20 @@ std::cout << "Transceiver eCheckQueue -> " << m_state << std::endl;
           m_channel->onError(nullptr);
           m_state = eCreateExchange;
 #ifndef NDEBUG
-std::cout << "Transceiver eRecreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eRecreateChannel -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
         m_channel->onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eRecreateChannel error: " << message << std::endl;
+std::clog << "Transceiver eRecreateChannel error: " << message << std::endl;
 #endif
           if (m_state != eRecreateChannel) return;
           m_error = message;
           m_ec = eCreateChannelError;
           m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eRecreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eRecreateChannel -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
@@ -284,20 +284,20 @@ std::cout << "Transceiver eRecreateChannel -> " << m_state << std::endl;
           if (m_state != eCreateExchange) return;
           m_state = m_listener ? eCreateQueue : eReady;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateExchange -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateExchange -> " << m_state << std::endl;
 #endif
           StateMachine();
         })
         .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateExchange error: " << message << std::endl;
+std::clog << "Transceiver eCreateExchange error: " << message << std::endl;
 #endif
           if (m_state != eCreateExchange) return;
           m_ec = eCreateExchangeError;
           m_error = message;
           m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateExchange -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateExchange -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
@@ -307,7 +307,7 @@ std::cout << "Transceiver eCreateExchange -> " << m_state << std::endl;
         {
           m_state = eBindQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -322,20 +322,20 @@ std::cout << "Transceiver eCreateQueue -> " << m_state << std::endl;
               m_recvQueue = name;
               m_state = eBindQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
 #endif
               StateMachine();
             })
             .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateQueue error: " << message << std::endl;
+std::clog << "Transceiver eCreateQueue error: " << message << std::endl;
 #endif
               if (m_state != eCreateQueue) return;
               m_ec = eCreateQueueError;
               m_error = message;
               m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
 #endif
               StateMachine();
             });
@@ -347,20 +347,20 @@ std::cout << "Transceiver eCreateQueue(" << m_recvQueue << ") -> " << m_state <<
           if (m_state != eBindQueue) return;
           m_state = eCreateConsumer;
 #ifndef NDEBUG
-std::cout << "Transceiver eBindQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eBindQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         })
         .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eBindQueue error: " << message << std::endl;
+std::clog << "Transceiver eBindQueue error: " << message << std::endl;
 #endif
           if (m_state != eBindQueue) return;
           m_ec = eBindQueueError;
           m_error = message;
           m_state = eRemoveQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eBindQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eBindQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
@@ -372,7 +372,7 @@ std::cout << "Transceiver eBindQueue -> " << m_state << std::endl;
           m_consumerTag = consumer;
           m_state = eReady;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_state << std::endl;
 #endif
           StateMachine();
         })
@@ -386,20 +386,45 @@ std::cout << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_sta
         })
         .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateConsumer error: " << message << std::endl;
+std::clog << "Transceiver eCreateConsumer error: " << message << std::endl;
 #endif
-          if (m_state != eCreateConsumer) return;
-          m_ec = eCreateConsumerError;
-          m_error = message;
-          m_state = eUnbindQueue;
+          switch (m_state)
+          {
+            case eCreateConsumer:
+              m_ec = eCreateConsumerError;
+              m_error = message;
+              m_state = eUnbindQueue;
+              break;
+            case eReady:
+              m_ec = eChannelAbruptlyClosedError;
+              m_error = message;
+              m_state = eEnd;
+              break;
+            default:
+              return;
+          }
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
       break;
     case eReady:
-      // nothing to do, waiting events...
+      if (!m_listener)
+      {
+        m_channel->onError([this](const char* message) {
+#ifndef NDEBUG
+std::clog << "Transceiver eReady error: " << message << std::endl;
+#endif
+          m_ec = eChannelAbruptlyClosedError;
+          m_error = message;
+          m_state = eEnd;
+#ifndef NDEBUG
+std::clog << "Transceiver eReady -> " << m_state << std::endl;
+#endif
+          StateMachine();
+        });
+      }
       break;
     case eShutdown:
       if (m_listener)
@@ -408,7 +433,7 @@ std::cout << "Transceiver eCreateConsumer(" << m_consumerTag << ") -> " << m_sta
             {
               m_state = eUnbindQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eShutdown -> " << m_state << std::endl;
+std::clog << "Transceiver eShutdown -> " << m_state << std::endl;
 #endif
               StateMachine();
             }
@@ -419,19 +444,19 @@ std::cout << "Transceiver eShutdown -> " << m_state << std::endl;
                   if (m_consumerTag != consumer) return; // ???
                   m_state = eUnbindQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eShutdown(consumer cancel) -> " << m_state << std::endl;
+std::clog << "Transceiver eShutdown(consumer cancel) -> " << m_state << std::endl;
 #endif
                   StateMachine();
                 })
                 .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eShutdown(consumer cancel) error: " << message << std::endl;
+std::clog << "Transceiver eShutdown(consumer cancel) error: " << message << std::endl;
 #endif
                   m_ec = eConsumerCancelError;
                   m_error = message;
                   m_state = eUnbindQueue;
 #ifndef NDEBUG
-std::cout << "Transceiver eShutdown(consumer cancel) -> " << m_state << std::endl;
+std::clog << "Transceiver eShutdown(consumer cancel) -> " << m_state << std::endl;
 #endif
                   StateMachine();
                 });
@@ -441,7 +466,7 @@ std::cout << "Transceiver eShutdown(consumer cancel) -> " << m_state << std::end
         {
           m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eShutdown -> " << m_state << std::endl;
+std::clog << "Transceiver eShutdown -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -452,7 +477,7 @@ std::cout << "Transceiver eShutdown -> " << m_state << std::endl;
           // TODO: impossible???
           m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eUnbindQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eUnbindQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -471,33 +496,33 @@ std::cout << "Transceiver eUnbindQueue -> " << m_state << std::endl;
               .onSuccess([this]() {
                 m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eUnbindQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eUnbindQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
 #endif
                 StateMachine();
               })
               .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eUnbindQueue(" << m_recvQueue << ") error: " << message << std::endl;
+std::clog << "Transceiver eUnbindQueue(" << m_recvQueue << ") error: " << message << std::endl;
 #endif
                 if (m_ec == eNoError) m_ec = eUnbindQueueError;
                 if (m_error.empty()) m_error = message;
                 m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eUnbindQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eUnbindQueue -> " << m_state << std::endl;
 #endif
                 StateMachine();
               });
           });
           m_channel->onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eUnbindQueue restore channel error: " << message << std::endl;
+std::clog << "Transceiver eUnbindQueue restore channel error: " << message << std::endl;
 #endif
             if (m_state != eUnbindQueue) return;
             m_error = message;
             m_ec = eCreateChannelError;
             m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCreateChannel -> " << m_state << std::endl;
 #endif
             StateMachine();
           });
@@ -508,7 +533,7 @@ std::cout << "Transceiver eCreateChannel -> " << m_state << std::endl;
         {
           m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eRemoveQueue -> " << m_state << std::endl;
 #endif
           StateMachine();
         }
@@ -528,33 +553,33 @@ std::cout << "Transceiver eRemoveQueue -> " << m_state << std::endl;
                 UNUSED(deletedmessages)
                 m_state = eCloseChannel;
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
+std::clog << "Transceiver eRemoveQueue(" << m_recvQueue << ") -> " << m_state << std::endl;
 #endif
                 StateMachine();
               })
               .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue(" << m_recvQueue << ") error: " << message << std::endl;
+std::clog << "Transceiver eRemoveQueue(" << m_recvQueue << ") error: " << message << std::endl;
 #endif
                 if (m_ec == eNoError) m_ec = eRemoveQueueError;
                 if (m_error.empty()) m_error = message;
                 m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eRemoveQueue -> " << m_state << std::endl;
 #endif
                 StateMachine();
               });
           });
           m_channel->onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue restore channel error: " << message << std::endl;
+std::clog << "Transceiver eRemoveQueue restore channel error: " << message << std::endl;
 #endif
             if (m_state != eRemoveQueue) return;
             m_error = message;
             m_ec = eCreateChannelError;
             m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eRemoveQueue -> " << m_state << std::endl;
+std::clog << "Transceiver eRemoveQueue -> " << m_state << std::endl;
 #endif
             StateMachine();
           });
@@ -565,19 +590,19 @@ std::cout << "Transceiver eRemoveQueue -> " << m_state << std::endl;
         .onSuccess([this]() {
           m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eCloseChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCloseChannel -> " << m_state << std::endl;
 #endif
           StateMachine();
         })
         .onError([this](const char* message) {
 #ifndef NDEBUG
-std::cout << "Transceiver eCloseChannel error: " << message << std::endl;
+std::clog << "Transceiver eCloseChannel error: " << message << std::endl;
 #endif
           if (m_ec == eNoError) m_ec = eCloseChannelError;
           if (m_error.empty()) m_error = message;
           m_state = eEnd;
 #ifndef NDEBUG
-std::cout << "Transceiver eCloseChannel -> " << m_state << std::endl;
+std::clog << "Transceiver eCloseChannel -> " << m_state << std::endl;
 #endif
           StateMachine();
         });
@@ -589,7 +614,7 @@ std::cout << "Transceiver eCloseChannel -> " << m_state << std::endl;
       m_queueExist = false;
       m_channel.reset();
 #ifndef NDEBUG
-std::cout << "Transceiver eEnd" << std::endl;
+std::clog << "Transceiver eEnd" << std::endl;
 #endif
       if (m_onExit) m_onExit(m_ec);
       break;

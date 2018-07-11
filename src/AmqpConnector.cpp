@@ -47,7 +47,7 @@ void Connector<TransceiverImpl>::open(Connector<TransceiverImpl>::iterator i)
 {
   // TODO: thread safety
   TransceiverPtr t(*i);
-  if (!t->is_running())
+  if (!t->is_running() && ready())
   {
     t->start(m_amqpConnection.get());
     while (t->is_running() && !t->ready()) m_service.run_one();
@@ -113,7 +113,7 @@ void Connector<TransceiverImpl>::run()
 {
   if (!m_connectionHandlerReady) return;
 #ifndef NDEBUG
-std::cout << "Connector::run()" << std::endl;
+std::clog << "Connector::run()" << std::endl;
 #endif
   {
     auto work = std::make_shared< boost::asio::io_service::work >(m_service);
@@ -123,7 +123,7 @@ std::cout << "Connector::run()" << std::endl;
     if (!i->is_running())
     {
 #ifndef NDEBUG
-std::cout << "Connector::run() " << i->route_in() << "@" << i->exchange_point() << std::endl;
+std::clog << "Connector::run() " << i->route_in() << "@" << i->exchange_point() << std::endl;
 #endif
       i->start(m_amqpConnection.get());
     }
@@ -132,7 +132,7 @@ std::cout << "Connector::run() " << i->route_in() << "@" << i->exchange_point() 
     while (i->is_running() && !i->ready()) m_service.run_one();
   }
 #ifndef NDEBUG
-std::cout << "Connector::run() m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
+std::clog << "Connector::run() m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
 #endif
 }
 
@@ -140,7 +140,7 @@ template <class TransceiverImpl>
 void Connector<TransceiverImpl>::stop()
 {
 #ifndef NDEBUG
-std::cout << "Connector::stop() " << m_connectionHandlerReady << std::endl;
+std::clog << "Connector::stop() " << m_connectionHandlerReady << std::endl;
 #endif
   // TODO: thread safety
   if (!m_connectionHandlerReady) return;
@@ -169,11 +169,11 @@ std::cout << "Connector::stop() " << m_connectionHandlerReady << std::endl;
         // prevent infinite loop in handler's shutdown callback
         m_exiting = true;
 #ifndef NDEBUG
-std::cout << "Connector::stop() before handler stop" << std::endl;
+std::clog << "Connector::stop() before handler stop" << std::endl;
 #endif
         m_connectionHandler->stop();
 #ifndef NDEBUG
-std::cout << "Connector::stop() after handler stop" << std::endl;
+std::clog << "Connector::stop() after handler stop" << std::endl;
 #endif
       }
   });
@@ -184,7 +184,7 @@ void Connector<TransceiverImpl>::onConnected()
 {
   m_connectionHandlerReady = true;
 #ifndef NDEBUG
-std::cout << "connection handler m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
+std::clog << "connection handler m_connectionHandlerReady = " << m_connectionHandlerReady << std::endl;
 #endif
   auto connection(std::make_shared<AMQP::Connection>(
     m_connectionHandler.get(), m_address.login(), m_address.vhost()
@@ -192,11 +192,11 @@ std::cout << "connection handler m_connectionHandlerReady = " << m_connectionHan
   m_amqpConnection.swap(connection);
   m_sentinel.reset();
 #ifndef NDEBUG
-std::cout << "Connector::async_start() after m_sentinel.reset()" << std::endl;
+std::clog << "Connector::async_start() after m_sentinel.reset()" << std::endl;
 #endif
   if (m_startedCb) m_startedCb();
 #ifndef NDEBUG
-std::cout << "Connector::async_start() after callback" << std::endl;
+std::clog << "Connector::async_start() after callback" << std::endl;
 #endif
 }
 
@@ -204,16 +204,16 @@ template <class TransceiverImpl>
 void Connector<TransceiverImpl>::onShutdown(const std::string& message)
 {
 #ifndef NDEBUG
-std::cout << "connection handler shutdown";
+std::clog << "connection handler shutdown";
 #endif
   if (!message.empty())
   {
 #ifndef NDEBUG
-std::cout << ": " << message;
+std::clog << ": " << message;
 #endif
   }
 #ifndef NDEBUG
-std::cout << std::endl;
+std::clog << std::endl;
 #endif
   if (m_exiting)
   {
@@ -238,7 +238,7 @@ std::cout << std::endl;
       {
         i->drop();
 #ifndef NDEBUG
-std::cout << i->route_in() << "@" << i->exchange_point() << ": " << i->error() << std::endl;
+std::clog << i->route_in() << "@" << i->exchange_point() << ": " << i->error() << std::endl;
 #endif
       }
       m_connectionHandlerReady = false;
