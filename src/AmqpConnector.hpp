@@ -13,6 +13,16 @@ namespace amqp {
 
 class ConnectionHandler;
 
+///
+/// Шаблонный класс, реализующий обертку библиотеки AMQP-CPP.
+
+/// Параметром шаблона является класс приемопередатчика, абстрагирующего
+/// работу с каналом AMQP. В библиотеке имеется реализация такого класса по
+/// умолчанию -- класс Transceiver. По умолчанию Connector инстанциируется с
+/// ним.
+///
+/// @author cycleg
+///
 template<class TransceiverImpl = Transceiver>
 class Connector
 {

@@ -7,7 +7,7 @@
 
 using namespace amqp;
 
-template class Connector<Transceiver>;
+template class Connector<Transceiver>; // инстанциирование шаблона по умолчанию
 
 template <class TransceiverImpl>
 Connector<TransceiverImpl>::Connector(boost::asio::io_service& service,
