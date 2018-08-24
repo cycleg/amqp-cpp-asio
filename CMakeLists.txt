@@ -108,9 +108,9 @@ ENDIF(DPKG_CMD)
 IF(CPACK_GENERATOR STREQUAL "DEB") # linux (deb)
     SET(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
     SET(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
-    SET(CPACK_DEBIAN_PACKAGE_SECTION libs)
+    SET(CPACK_DEBIAN_PACKAGE_SECTION libdevel)
     SET(CPACK_DEBIAN_PACKAGE_DEPENDS
-        "libc6, libstdc++6, libboost-system1.62.0, libboost-thread1.62.0")
+        "libc6, libstdc++6, libboost-system1.62.0, libboost-thread1.62.0, amqpcpp-dev")
     SET(CPACK_DEBIAN_PACKAGE_MAINTAINER
         "Alexei Golovin <a.golovin@pkcc.ru>")
 ENDIF(CPACK_GENERATOR STREQUAL "DEB")
