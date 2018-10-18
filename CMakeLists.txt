@@ -72,13 +72,9 @@ IF(AMQPASIO_BUILD_STATIC)
 ENDIF(AMQPASIO_BUILD_STATIC)
 
 SET(PKG_CONFIG_LIBS "-l${PROJECT_NAME}")
-CONFIGURE_FILE(
-   "pkg-config/amqpasio.pc.in"
-   "pkg-config/amqpasio.pc"
-   @ONLY
-)
+CONFIGURE_FILE("amqpasio.pc.in" "amqpasio.pc" @ONLY)
 INSTALL(
-   FILES "${CMAKE_CURRENT_BINARY_DIR}/pkg-config/amqpasio.pc"
+   FILES "${CMAKE_CURRENT_BINARY_DIR}/amqpasio.pc"
    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 
