@@ -1,10 +1,11 @@
-libdir=@CMAKE_INSTALL_FULL_LIBDIR@
-includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include
 
 Name: @PROJECT_NAME@
 Description: An AMQP-CPP wrapper with Boost::asio
 Version: @AMQPASIO_VERSION@
-Requires.private: amqpcpp
+Requires.private: amqpcpp >= 3.0.0
 URL: https://github.com/cycleg/amqp-cpp-asio
 Libs: -L${libdir} @PKG_CONFIG_LIBS@
 Libs.private: -lamqpcpp
