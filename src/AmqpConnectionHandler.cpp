@@ -79,7 +79,7 @@ void ConnectionHandler::onData(AMQP::Connection* connection,
 std::clog << "ConnectionHandler::onData() " << outBuf->size() << "!" << uint64_t(outBuf.get()) << std::endl;
 #endif
   m_outBufs.push(outBuf);
-  if (m_outBufs.size() == 1)
+  if (!m_writeReq)
   {
 #ifndef NDEBUG
 std::clog << "ConnectionHandler::onData() wait for write " << m_outBufs.size() << std::endl;
@@ -156,7 +156,6 @@ std::clog << "ConnectionHandler::StateMachine() before async_connect()" << std::
       boost::asio::async_connect(m_socket, m_rIterator,
                                  [this](const boost::system::error_code& ec,
                                         boost::asio::ip::tcp::resolver::iterator i) {
-        // something happened...
         if (m_state != eConnecting) return;
         if (ec || (i == boost::asio::ip::tcp::resolver::iterator()))
         {
@@ -174,7 +173,7 @@ std::clog << "ConnectionHandler::StateMachine() after async_connect() " << m_soc
 #endif
       break;
     case eReceiverInit:
-      m_connectedCb();
+      if (m_connectedCb) m_connectedCb();
       break;
     case eReady:
       {
@@ -230,7 +229,7 @@ std::clog << "ConnectionHandler::StateMachine() read callback installed, bytes i
       StateMachine();
       break;
     case eNotConnected:
-      m_shutdownCb(m_lastError);
+      if (m_shutdownCb) m_shutdownCb(m_lastError);
       m_lastError.clear();
       break;
     default:
