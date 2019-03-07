@@ -7,6 +7,15 @@
 using namespace amqp;
 
 const int Transceiver::ExchangeCreationFlags = AMQP::autodelete + AMQP::durable;
+std::unordered_map<Transceiver::State, Transceiver::State> Transceiver::StopTransit = {
+  { eCreateChannel, eEnd },
+  { eCreateExchange, eCloseChannel },
+  { eCheckQueue, eCloseChannel },
+  { eCreateQueue, eCloseChannel },
+  { eBindQueue, eRemoveQueue },
+  { eCreateConsumer, eUnbindQueue },
+  { eReady, eShutdown }
+};
 
 Transceiver::Transceiver(const std::string& exchange, const std::string& queue_,
                          const std::string& route_in, bool listener):
@@ -131,21 +140,12 @@ std::clog << "Transceiver eEnd -> " << m_state << std::endl;
 void Transceiver::stop()
 {
   if (m_state == eEnd) return;
-  std::map<State, State> route = {
-    std::pair<State, State>(eCreateChannel, eEnd),
-    std::pair<State, State>(eCreateExchange, eCloseChannel),
-    std::pair<State, State>(eCheckQueue, eCloseChannel),
-    std::pair<State, State>(eCreateQueue, eCloseChannel),
-    std::pair<State, State>(eBindQueue, eRemoveQueue),
-    std::pair<State, State>(eCreateConsumer, eUnbindQueue),
-    std::pair<State, State>(eReady, eShutdown)
-  };
   if ((m_state >= eCreateChannel) && (m_state <= eReady))
   {
 #ifndef NDEBUG
 std::clog << "Transceiver " << m_state << " -> ";
 #endif
-    m_state = route[m_state];
+    m_state = StopTransit[m_state];
 #ifndef NDEBUG
 std::clog << m_state << std::endl;
 #endif

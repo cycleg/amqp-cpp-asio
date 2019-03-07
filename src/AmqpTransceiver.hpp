@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <amqpcpp.h>
 #include <json/json.h>
 
@@ -368,6 +369,9 @@ class Transceiver
     };
     static const int ExchangeCreationFlags; ///< Флаги, с которыми создается
                                             ///< (открывается) точка обмена.
+    static std::unordered_map<State, State> StopTransit; ///< Таблица переходов
+                                                         ///< для остановки
+                                                         ///< клиента в stop().
 
     ///
     /// Вывод текущего состояния конечного автомата в поток.
