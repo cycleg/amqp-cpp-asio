@@ -214,11 +214,12 @@ class ConnectionHandler: public AMQP::ConnectionHandler
                                         ///< ASIO, через который проходят
                                         ///< данные.
     boost::asio::ip::tcp::socket m_socket; ///< Сокет соединения с брокером AMQP.
+    std::shared_ptr<boost::asio::io_service::work>
+      m_sentinel; ///< "Сторож", не дает циклу службы ввода/вывода, заданной в
+                  ///< конструкторе, завершиться раньше времени.
     std::shared_ptr<boost::asio::streambuf> m_inBuf; ///< Буфер входящих данных.
-    std::queue< std::shared_ptr<boost::asio::streambuf> > m_outBufs; ///< Очередь
-                                                                     ///< буферов
-                                                                     ///< исходящих
-                                                                     ///< данных.
+    std::queue< std::shared_ptr<boost::asio::streambuf> >
+      m_outBufs; ///< Очередь буферов исходящих данных.
     std::string m_host, ///< Имя или адрес хоста брокера.
                 m_port, ///< TCP-порт брокера.
                 m_lastError; ///< Описание последней ошибки, возникшей в

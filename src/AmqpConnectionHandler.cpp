@@ -129,6 +129,10 @@ void ConnectionHandler::StateMachine()
 #ifndef NDEBUG
 std::clog << "ConnectionHandler::StateMachine() before async_resolve()" << std::endl;
 #endif
+      {
+        auto work = std::make_shared<boost::asio::io_service::work>(m_service);
+        m_sentinel.swap(work);
+      }
       m_resolver.async_resolve(boost::asio::ip::tcp::resolver::query(m_host, m_port),
                                [this](const boost::system::error_code& ec,
                                       boost::asio::ip::tcp::resolver::iterator i) {
@@ -231,6 +235,7 @@ std::clog << "ConnectionHandler::StateMachine() read callback installed, bytes i
     case eNotConnected:
       if (m_shutdownCb) m_shutdownCb(m_lastError);
       m_lastError.clear();
+      m_sentinel.reset();
       break;
     default:
       break;
