@@ -141,7 +141,7 @@ class Transceiver
     {
       eNoError, ///< Нормальное завершение.
       eCreateChannelError, ///< Ошибка открытия канала.
-      eCreateExchangeError, ///< Ошибка создания очки обмена.
+      eCreateExchangeError, ///< Ошибка создания точки обмена.
       eCreateQueueError, ///< Ошибка создания очереди.
       eBindQueueError, ///< Ошибка подсоединения очереди.
       eCreateConsumerError, ///< Ошибка регистрации подписчика.
