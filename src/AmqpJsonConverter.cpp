@@ -1,23 +1,26 @@
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include "AmqpJsonConverter.hpp"
 
 namespace amqp {
 
-Json::Value ConvertToJson(const AMQP::Envelope& message)
+void ConvertToJson(const AMQP::Envelope& message, rapidjson::Document& json)
 {
-  Json::Value value;
+  json.RemoveAllMembers();
   if (message.contentType() == "application/json")
   {
-    Json::Reader reader;
-    reader.parse(std::string(message.body(), message.bodySize()), value);
+    if (json.Parse(message.body(), message.bodySize()).HasParseError())
+      json.RemoveAllMembers();
   }
-  return value;
 }
 
-std::shared_ptr< AMQP::Envelope > ConvertFromJson(const Json::Value& json,
-                                                  std::string& buffer)
+std::shared_ptr<AMQP::Envelope> ConvertFromJson(const rapidjson::Document& json,
+                                                std::string& buffer)
 {
-  Json::FastWriter writer;
-  buffer = writer.write(json);
+  StringBuffer buff;
+  Writer<StringBuffer> writer(buff);
+  json.Accept(writer);
+  buffer.assign(buff.GetString(), buff.GetSize());
   std::shared_ptr<AMQP::Envelope> envelope(new AMQP::Envelope(buffer.data(),
                                                               buffer.size()));
   envelope->setContentType("application/json");

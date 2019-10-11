@@ -55,7 +55,8 @@ void Transceiver::onExit(ExitCallback callback)
   m_onExit = callback;
 }
 
-bool Transceiver::send(const Json::Value& message, const std::string& route,
+bool Transceiver::send(const rapidjson::Document& message,
+                       const std::string& route,
                        bool mandatory)
 {
   if (m_state != eReady) return false;

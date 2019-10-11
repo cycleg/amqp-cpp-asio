@@ -6,7 +6,6 @@
 #include <string>
 #include <boost/asio/io_service.hpp>
 #include <amqpcpp.h>
-#include <json/json.h>
 #include "AmqpTransceiver.hpp"
 
 namespace amqp {

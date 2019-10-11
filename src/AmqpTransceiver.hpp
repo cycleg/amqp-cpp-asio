@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <amqpcpp.h>
-#include <json/json.h>
+#include <rapidjson/document.h>
 
 namespace amqp {
 
@@ -301,7 +301,7 @@ class Transceiver
     /// По умолчанию mandatory равен истине, т.е. если функция обратного
     /// вызова определена, то она будет запущена.
     ///
-    bool send(const Json::Value& message, const std::string& route,
+    bool send(const rapidjson::Document& message, const std::string& route,
               bool mandatory = true);
     ///
     /// Опубликовать текстовое сообщение.
