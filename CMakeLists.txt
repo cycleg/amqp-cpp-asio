@@ -46,6 +46,7 @@ SET(HEADERS
     src/AmqpConnector.hpp
     src/AmqpJsonConverter.hpp
     src/AmqpTransceiver.hpp
+    src/AutoReconnect.cpp
 )
 
 SET(SOURCES
@@ -53,6 +54,7 @@ SET(SOURCES
     src/AmqpConnector.cpp
     src/AmqpJsonConverter.cpp
     src/AmqpTransceiver.cpp
+    src/AutoReconnect.hpp
 )
 
 ADD_LIBRARY(objlib OBJECT ${HEADERS} ${SOURCES})
