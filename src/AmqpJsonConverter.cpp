@@ -17,8 +17,8 @@ void ConvertToJson(const AMQP::Envelope& message, rapidjson::Document& json)
 std::shared_ptr<AMQP::Envelope> ConvertFromJson(const rapidjson::Document& json,
                                                 std::string& buffer)
 {
-  StringBuffer buff;
-  Writer<StringBuffer> writer(buff);
+  rapidjson::StringBuffer buff;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buff);
   json.Accept(writer);
   buffer.assign(buff.GetString(), buff.GetSize());
   std::shared_ptr<AMQP::Envelope> envelope(new AMQP::Envelope(buffer.data(),
