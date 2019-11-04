@@ -6,6 +6,8 @@
 #endif
 #include "AutoReconnect.hpp"
 
+using namespace amqp;
+
 AutoReconnect::AutoReconnect(const std::shared_ptr< amqp::Connector<> >& connector):
   m_connector(connector),
   m_started(false),

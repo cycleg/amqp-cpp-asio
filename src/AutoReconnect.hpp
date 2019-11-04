@@ -4,6 +4,8 @@
 #include <boost/asio/steady_timer.hpp>
 #include "AmqpConnector.hpp"
 
+namespace amqp {
+
 ///
 /// Класс-обертка для amqp::Connector, автоматически восстанавливающий соединение с брокером AMQP.
 
@@ -120,3 +122,5 @@ class AutoReconnect
     boost::asio::steady_timer m_timer; ///< Таймер запуска следующей попытки
                                        ///< соединиться с брокером.
 };
+
+} // namespace amqp
