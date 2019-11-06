@@ -1,4 +1,6 @@
-#include <iostream> // debug output
+#ifndef NDEBUG
+#include <iostream>
+#endif
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
