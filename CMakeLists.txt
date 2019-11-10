@@ -121,6 +121,26 @@ IF(AMQPASIO_BUILD_EXAMPLES)
         -lamqpcpp
         ${CMAKE_THREAD_LIBS_INIT}
     )
+    ADD_EXECUTABLE(sender examples/sender.cpp)
+    IF(AMQPASIO_BUILD_SHARED)
+        ADD_DEPENDENCIES(sender ${PROJECT_NAME})
+    ELSE()
+        ADD_DEPENDENCIES(sender ${PROJECT_NAME}_static)
+    ENDIF()
+    TARGET_INCLUDE_DIRECTORIES(sender PRIVATE
+        ${Boost_INCLUDE_DIR}
+        ${RAPIDJSON_INCLUDE_DIRS}
+        ${AMQPCPP_INCLUDE_DIRS}
+    )
+    TARGET_LINK_DIRECTORIES(sender PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    TARGET_LINK_LIBRARIES(sender
+        ${Boost_SYSTEM_LIBRARY}
+        ${PKG_CONFIG_LIBS}
+        -lamqpcpp
+        ${CMAKE_THREAD_LIBS_INIT}
+    )
 ENDIF(AMQPASIO_BUILD_EXAMPLES)
 
 ### CPack

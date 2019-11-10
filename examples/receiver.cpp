@@ -33,9 +33,9 @@ void onAmqpMessage(AMQP::Channel* channel, const AMQP::Message& message,
   rapidjson::OStreamWrapper osw(std::cout);
   rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(osw);
   writer.SetIndent(' ', 2);
-  std::cout << "AMQP raw message content:" << std::endl;
-  std::cout << std::string(message.body(), message.bodySize()) << std::endl;
-  std::cout << "JSON:" << std::endl;
+  std::cout << "AMQP raw message content:" << std::endl
+            << std::string(message.body(), message.bodySize()) << std::endl
+            << "JSON:" << std::endl;
   msg.Accept(writer);
   std::cout << std::endl;
 }
