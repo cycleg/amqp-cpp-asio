@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.7.0)
 # build options
 OPTION(AMQPASIO_BUILD_SHARED "Build shared library, if on." OFF)
 OPTION(AMQPASIO_BUILD_STATIC "Build static library, if on." ON)
-OPTION(AMQPASIO_BUILD_EXAMPLES "Build example applications, if on." ON)
+OPTION(AMQPASIO_BUILD_EXAMPLES "Build example applications, if on." OFF)
 
 IF(NOT AMQPASIO_BUILD_SHARED AND NOT AMQPASIO_BUILD_STATIC)
   MESSAGE(FATAL_ERROR "Build shared or static library! Or both.")
@@ -102,10 +102,13 @@ INSTALL(DIRECTORY src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
 IF(AMQPASIO_BUILD_EXAMPLES)
     INCLUDE(FindThreads)
     ADD_EXECUTABLE(receiver examples/receiver.cpp)
+    ADD_EXECUTABLE(sender examples/sender.cpp)
     IF(AMQPASIO_BUILD_SHARED)
         ADD_DEPENDENCIES(receiver ${PROJECT_NAME})
+        ADD_DEPENDENCIES(sender ${PROJECT_NAME})
     ELSE()
         ADD_DEPENDENCIES(receiver ${PROJECT_NAME}_static)
+        ADD_DEPENDENCIES(sender ${PROJECT_NAME}_static)
     ENDIF()
     TARGET_INCLUDE_DIRECTORIES(receiver PRIVATE
         ${Boost_INCLUDE_DIR}
@@ -121,12 +124,6 @@ IF(AMQPASIO_BUILD_EXAMPLES)
         -lamqpcpp
         ${CMAKE_THREAD_LIBS_INIT}
     )
-    ADD_EXECUTABLE(sender examples/sender.cpp)
-    IF(AMQPASIO_BUILD_SHARED)
-        ADD_DEPENDENCIES(sender ${PROJECT_NAME})
-    ELSE()
-        ADD_DEPENDENCIES(sender ${PROJECT_NAME}_static)
-    ENDIF()
     TARGET_INCLUDE_DIRECTORIES(sender PRIVATE
         ${Boost_INCLUDE_DIR}
         ${RAPIDJSON_INCLUDE_DIRS}
