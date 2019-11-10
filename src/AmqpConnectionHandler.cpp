@@ -1,4 +1,6 @@
-#include <iostream> // debug output
+#ifndef NDEBUG
+#include <iostream>
+#endif
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include "AmqpConnectionHandler.hpp"

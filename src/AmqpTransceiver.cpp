@@ -1,4 +1,6 @@
-#include <iostream> // debug output
+#ifndef NDEBUG
+#include <iostream>
+#endif
 #include "AmqpJsonConverter.hpp"
 #include "AmqpTransceiver.hpp"
 

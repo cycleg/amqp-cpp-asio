@@ -1,8 +1,7 @@
 #include <chrono>
 #include <functional>
+#ifndef NDEBUG
 #include <iostream>
-#if 0
-#include "SyslogStreambuf.hpp"
 #endif
 #include "AutoReconnect.hpp"
 
@@ -60,9 +59,8 @@ void AutoReconnect::stop()
 
 void AutoReconnect::started()
 {
-#if 0
-  std::clog << SyslogStreambuf::kLogInfo
-            << m_connector->url() << " connection established" << std::endl;
+#ifndef NDEBUG
+  std::clog << m_connector->url() << " connection established" << std::endl;
 #endif
   if (m_needStop)
   {
@@ -100,9 +98,8 @@ void AutoReconnect::restart(amqp::Connector<>::ExitCode code)
           m_backupExitCallback = nullptr;
           break;
         case amqp::Connector<>::eBrokerConnectError:
-#if 0
-          std::clog << SyslogStreambuf::kLogWarning
-                    << m_connector->url() << " not connected, trying again..."
+#ifndef NDEBUG
+          std::clog << m_connector->url() << " not connected, trying again..."
                     << std::endl;
 #endif
           m_rerun = true;
@@ -115,9 +112,8 @@ void AutoReconnect::restart(amqp::Connector<>::ExitCode code)
           });
           break;
         case amqp::Connector<>::eAmqpError:
-#if 0
-          std::clog << SyslogStreambuf::kLogWarning
-                    << m_connector->url() << " connection lost, restore..."
+#ifndef NDEBUG
+          std::clog << m_connector->url() << " connection lost, restore..."
                     << std::endl;
 #endif
           m_rerun = true;

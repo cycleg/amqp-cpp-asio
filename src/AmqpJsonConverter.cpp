@@ -1,16 +1,29 @@
+#ifndef NDEBUG
+#include <iostream>
+#endif
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <rapidjson/error/en.h>
 #include "AmqpJsonConverter.hpp"
 
 namespace amqp {
 
 void ConvertToJson(const AMQP::Envelope& message, rapidjson::Document& json)
 {
-  json.RemoveAllMembers();
+#ifndef NDEBUG
+  std::clog << "ConvertToJson(): content type " << message.contentType()
+            << std::endl;
+#endif
   if (message.contentType() == "application/json")
   {
     if (json.Parse(message.body(), message.bodySize()).HasParseError())
-      json.RemoveAllMembers();
+    {
+#ifndef NDEBUG
+      std::clog << "ConvertToJson(): "
+                << GetParseError_En(json.GetParseError()) << std::endl;
+#endif
+      json = rapidjson::Document(rapidjson::kNullType);
+    }
   }
 }
 
