@@ -44,7 +44,7 @@ PKG_CHECK_MODULES(AMQPCPP REQUIRED amqpcpp>=3.0.0)
 
 SET(CMAKE_CXX_FLAGS "-Wextra -Wall -Wnon-virtual-dtor -fstack-protector-all")
 
-SET(AMQPASIO_VERSION "0.3.0")
+SET(AMQPASIO_VERSION "0.3.2")
 
 SET(HEADERS
     src/AmqpConnectionHandler.hpp
