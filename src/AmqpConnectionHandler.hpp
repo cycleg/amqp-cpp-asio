@@ -128,8 +128,8 @@ class ConnectionHandler: public AMQP::ConnectionHandler
     void stop();
 
 #if 0
-    uint16_t onNegotiate(AMQP::Connection* connection, uint16_t interval);
-#endif
+    uint16_t onNegotiate(AMQP::Connection* connection, uint16_t interval) override;
+D:\work\amqp-cpp-asio\src\AmqpConnectionHandler.hpponconn#endif
 
     ///
     /// Вызывается для отправки данных из AMQP-CPP.
@@ -140,7 +140,7 @@ class ConnectionHandler: public AMQP::ConnectionHandler
     ///
     /// Реализация AMQP::ConnectionHandler::onData().
     ///
-    void onData(AMQP::Connection* connection, const char* buffer, size_t size);
+    void onData(AMQP::Connection* connection, const char* buffer, size_t size) override;
     ///
     /// Вызывается при возникновении ошибки из AMQP-CPP.
     ///
@@ -151,7 +151,7 @@ class ConnectionHandler: public AMQP::ConnectionHandler
     ///
     /// Реализация AMQP::ConnectionHandler::onError().
     ///
-    void onError(AMQP::Connection* connection, const char* message);
+    void onError(AMQP::Connection* connection, const char* message) override;
     ///
     /// Вызывается при закрытии соединения в AMQP-CPP.
     ///
@@ -159,7 +159,7 @@ class ConnectionHandler: public AMQP::ConnectionHandler
     ///
     /// Реализация AMQP::ConnectionHandler::onClosed().
     ///
-    void onClosed(AMQP::Connection* connection);
+    void onClosed(AMQP::Connection* connection) override;
 
   private:
     ///

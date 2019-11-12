@@ -1,9 +1,9 @@
 #ifndef NDEBUG
 #include <iostream>
+#include <rapidjson/error/en.h>
 #endif
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <rapidjson/error/en.h>
 #include "AmqpJsonConverter.hpp"
 
 namespace amqp {
