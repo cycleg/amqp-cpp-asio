@@ -105,23 +105,31 @@ IF(AMQPASIO_BUILD_EXAMPLES)
     ADD_EXECUTABLE(sender examples/sender.cpp)
     IF(AMQPASIO_BUILD_SHARED)
         ADD_DEPENDENCIES(receiver ${PROJECT_NAME})
+        TARGET_LINK_LIBRARIES(receiver
+            ${PROJECT_NAME}
+        )
         ADD_DEPENDENCIES(sender ${PROJECT_NAME})
+        TARGET_LINK_LIBRARIES(sender
+            ${PROJECT_NAME}
+        )
     ELSE()
         ADD_DEPENDENCIES(receiver ${PROJECT_NAME}_static)
+        TARGET_LINK_LIBRARIES(receiver
+            ${PROJECT_NAME}_static
+        )
         ADD_DEPENDENCIES(sender ${PROJECT_NAME}_static)
+        TARGET_LINK_LIBRARIES(sender
+            ${PROJECT_NAME}_static
+        )
     ENDIF()
     TARGET_INCLUDE_DIRECTORIES(receiver PRIVATE
         ${Boost_INCLUDE_DIR}
         ${RAPIDJSON_INCLUDE_DIRS}
         ${AMQPCPP_INCLUDE_DIRS}
     )
-    TARGET_LINK_DIRECTORIES(receiver PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-    )
     TARGET_LINK_LIBRARIES(receiver
         ${Boost_SYSTEM_LIBRARY}
-        ${PKG_CONFIG_LIBS}
-        -lamqpcpp
+        ${AMQPCPP_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
     )
     TARGET_INCLUDE_DIRECTORIES(sender PRIVATE
@@ -129,13 +137,9 @@ IF(AMQPASIO_BUILD_EXAMPLES)
         ${RAPIDJSON_INCLUDE_DIRS}
         ${AMQPCPP_INCLUDE_DIRS}
     )
-    TARGET_LINK_DIRECTORIES(sender PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-    )
     TARGET_LINK_LIBRARIES(sender
         ${Boost_SYSTEM_LIBRARY}
-        ${PKG_CONFIG_LIBS}
-        -lamqpcpp
+        ${AMQPCPP_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
     )
 ENDIF(AMQPASIO_BUILD_EXAMPLES)
