@@ -129,7 +129,7 @@ class ConnectionHandler: public AMQP::ConnectionHandler
 
 #if 0
     uint16_t onNegotiate(AMQP::Connection* connection, uint16_t interval) override;
-D:\work\amqp-cpp-asio\src\AmqpConnectionHandler.hpponconn#endif
+#endif
 
     ///
     /// Вызывается для отправки данных из AMQP-CPP.
