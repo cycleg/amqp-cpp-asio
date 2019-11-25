@@ -78,7 +78,7 @@ void ConnectionHandler::onData(AMQP::Connection* connection,
   std::ostream os(outBuf.get());
   os.write(buffer, size);
 #ifndef NDEBUG
-std::clog << "ConnectionHandler::onData() " << outBuf->size() << "!" << uint64_t(outBuf.get()) << std::endl;
+std::clog << "ConnectionHandler::onData() " << uint64_t(outBuf.get()) << " size = " << outBuf->size() << std::endl;
 #endif
   m_outBufs.push(outBuf);
   if (!m_writeReq)
@@ -308,7 +308,7 @@ void ConnectionHandler::onWrite(const boost::system::error_code& ec,
   if (!connected()) return;
 #ifndef NDEBUG
 std::clog << "ConnectionHandler::onWrite() send " << bytes << std::endl;
-std::clog << "ConnectionHandler::onWrite() remain " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
+std::clog << "ConnectionHandler::onWrite() " << uint64_t(m_outBufs.front().get()) << " remain " << m_outBufs.front()->size() << std::endl;
 #endif
   if (ec)
   {
@@ -332,7 +332,7 @@ std::clog << "ConnectionHandler::onWrite() drop " << uint64_t(m_outBufs.front().
   {
 #ifndef NDEBUG
 std::clog << "ConnectionHandler::onWrite() wait for write " << m_outBufs.size() << std::endl;
-std::clog << "ConnectionHandler::onWrite() " << m_outBufs.front()->size() << "!" << uint64_t(m_outBufs.front().get()) << std::endl;
+std::clog << "ConnectionHandler::onWrite() " << uint64_t(m_outBufs.front().get()) << " size = " << m_outBufs.front()->size() << std::endl;
 #endif
     m_writeReq = true;
     boost::asio::async_write(
